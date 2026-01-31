@@ -50,6 +50,7 @@ jobs:
 
       - name: 打包扩展 (Extension ZIP)
         run: |
+          # 进入 extension 目录打包，确保 ZIP 根目录直接包含扩展文件
           cd extension
           zip -r ../AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip \
             manifest.json \
@@ -60,6 +61,10 @@ jobs:
           cd ..
           echo "打包完成: AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip"
           ls -lh AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip
+          
+          # 验证 ZIP 内容
+          echo "验证 ZIP 结构:"
+          unzip -l AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip | head -20
 
       - name: 打包源代码 (Source ZIP)
         run: |
@@ -86,25 +91,33 @@ jobs:
 
             ## 安装方法
 
-            ### Chrome/Edge 浏览器
+            ### 方法一：直接加载解压文件（推荐）
 
             1. 下载 `AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip`
-            2. 解压到本地文件夹
-            3. 打开浏览器扩展管理页面 (`chrome://extensions/` 或 `edge://extensions/`)
-            4. 启用"开发者模式"
-            5. 点击"加载已解压的扩展程序"
-            6. 选择解压后的文件夹
+            2. **解压到本地文件夹**
+            3. 打开浏览器扩展管理页面
+               - Chrome: `chrome://extensions/`
+               - Edge: `edge://extensions/`
+            4. 启用右上角的 **"开发者模式"**
+            5. 点击 **"加载已解压的扩展程序"**
+            6. 选择解压后的文件夹（包含 manifest.json 的文件夹）
+            
+            ### 方法二：直接拖放 ZIP（部分浏览器支持）
+            
+            1. 下载 `AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip`
+            2. 打开浏览器扩展管理页面并启用开发者模式
+            3. 直接将 ZIP 文件拖放到扩展页面
 
             ## 支持的平台
 
-            - ✅ Gemini
-            - ✅ ChatGPT
-            - ✅ Grok
+            - ✅ Gemini (gemini.google.com)
+            - ✅ ChatGPT (chatgpt.com / chat.openai.com)
+            - ✅ Grok (grok.x.ai / grok.com / x.com/i/grok)
 
             ## 文件说明
 
-            - `AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip` - 浏览器扩展包 (推荐下载)
-            - `AIhubEnhenced-source-${{ steps.get_version.outputs.version }}.zip` - 完整源代码
+            - `AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip` - 浏览器扩展包（推荐下载，解压后可直接加载）
+            - `AIhubEnhenced-source-${{ steps.get_version.outputs.version }}.zip` - 完整源代码（包含所有项目文件）
             - `Source code (zip/tar.gz)` - GitHub 自动生成的源代码
           files: |
             AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip
