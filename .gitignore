@@ -1,0 +1,15 @@
+# 前端
+node_modules
+dist
+.DS_Store
+.*
+# 保留.git相关
+!.git
+# 保留 GitHub Actions
+!.github/
+# 忽略VSCode
+.vscode
+.idea
+openspec
+AGENTS.md
+scripts
