@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "AIhubEnhenced  AI对话聚合增加导出助手",
+  "version": "0.1.0",
+  "description": "导出 Gemini、ChatGPT、Grok 的对话内容并提供对话目录",
+  "icons": {
+    "16": "icons/1024x1024.png",
+    "48": "icons/1024x1024.png",
+    "128": "icons/1024x1024.png"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://gemini.google.com/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://grok.x.ai/*",
+    "https://grok.com/*",
+    "https://x.com/i/grok*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://gemini.google.com/*",
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://grok.x.ai/*",
+        "https://grok.com/*",
+        "https://x.com/i/grok*"
+      ],
+      "js": [
+        "jszip.min.js",
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
