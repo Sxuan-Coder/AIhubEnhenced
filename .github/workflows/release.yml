@@ -3,33 +3,33 @@ name: 自动发布 Release
 on:
   push:
     tags:
-      - 'v*.*.*'  # 匹配 v1.0.0, v0.1.0 等版本标签
+      - "v*.*.*" # 匹配 v1.0.0, v0.1.0 等版本标签
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # 需要写权限来创建 Release
-    
+      contents: write # 需要写权限来创建 Release
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取完整历史用于生成更新日志
-      
+          fetch-depth: 0 # 获取完整历史用于生成更新日志
+
       - name: 获取版本号
         id: get_version
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
-      
+
       - name: 生成更新日志
         id: changelog
         run: |
           # 获取上一个 tag
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
+
           if [ -z "$PREVIOUS_TAG" ]; then
             # 如果没有上一个 tag，获取所有提交
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
@@ -37,17 +37,17 @@ jobs:
             # 获取两个 tag 之间的提交
             CHANGELOG=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
           fi
-          
+
           # 转义换行符并保存到输出
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
           echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
-          
+
           # 输出预览
           echo "## 更新内容"
           git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges || git log --pretty=format:"- %s (%h)" --no-merges
-      
+
       - name: 打包扩展 (Extension ZIP)
         run: |
           cd extension
@@ -60,7 +60,7 @@ jobs:
           cd ..
           echo "打包完成: AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip"
           ls -lh AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip
-      
+
       - name: 打包源代码 (Source ZIP)
         run: |
           zip -r AIhubEnhenced-source-${{ steps.get_version.outputs.version }}.zip \
@@ -72,37 +72,37 @@ jobs:
             -x "*.git*" -x "*node_modules*" -x "*.DS_Store"
           echo "源代码打包完成: AIhubEnhenced-source-${{ steps.get_version.outputs.version }}.zip"
           ls -lh AIhubEnhenced-source-${{ steps.get_version.outputs.version }}.zip
-      
+
       - name: 创建 Release
         uses: softprops/action-gh-release@v1
         with:
           name: AIhubEnhenced ${{ steps.get_version.outputs.version }}
           body: |
             # AIhubEnhenced ${{ steps.get_version.outputs.version }}
-            
+
             ## 更新内容
-            
+
             ${{ steps.changelog.outputs.changelog }}
-            
+
             ## 安装方法
-            
+
             ### Chrome/Edge 浏览器
-            
+
             1. 下载 `AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip`
             2. 解压到本地文件夹
             3. 打开浏览器扩展管理页面 (`chrome://extensions/` 或 `edge://extensions/`)
             4. 启用"开发者模式"
             5. 点击"加载已解压的扩展程序"
             6. 选择解压后的文件夹
-            
+
             ## 支持的平台
-            
-            - ✅ Gemini (gemini.google.com)
-            - ✅ ChatGPT (chatgpt.com / chat.openai.com)
-            - ✅ Grok (grok.x.ai / grok.com / x.com/i/grok)
-            
+
+            - ✅ Gemini
+            - ✅ ChatGPT
+            - ✅ Grok
+
             ## 文件说明
-            
+
             - `AIhubEnhenced-${{ steps.get_version.outputs.version }}.zip` - 浏览器扩展包 (推荐下载)
             - `AIhubEnhenced-source-${{ steps.get_version.outputs.version }}.zip` - 完整源代码
             - `Source code (zip/tar.gz)` - GitHub 自动生成的源代码
@@ -113,7 +113,7 @@ jobs:
           prerelease: ${{ contains(steps.get_version.outputs.version, 'alpha') || contains(steps.get_version.outputs.version, 'beta') || contains(steps.get_version.outputs.version, 'rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: 发布成功通知
         run: |
           echo "🎉 Release ${{ steps.get_version.outputs.version }} 已成功发布！"
