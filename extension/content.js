@@ -1716,23 +1716,18 @@
     tipCard.appendChild(tipTitle);
     tipCard.appendChild(tipContent);
 
-    // 对话目录独立为右侧浮层，避免放在侧边栏内部
+    // 对话目录独立为右侧浮层，放在侧边栏外部
     UI.directoryPanel = CommonUtil.createElement('div', { className: 'aihub-directory-panel' });
     const directoryHeader = CommonUtil.createElement('div', { className: 'aihub-directory-header' });
-    const directoryTitle = CommonUtil.createElement('span', { text: '对话目录' });
-    UI.directoryToggle = CommonUtil.createElement('button', { className: 'aihub-directory-toggle', text: '-' });
+    const directoryTitle = CommonUtil.createElement('span', { text: 'Directory' });
+    // 不再需要展开折叠按钮，只显示文字，依靠 hover 处理展现
     directoryHeader.appendChild(directoryTitle);
-    directoryHeader.appendChild(UI.directoryToggle);
     UI.directoryContainer = CommonUtil.createElement('div', { className: 'aihub-directory' });
     UI.directoryPanel.appendChild(directoryHeader);
     UI.directoryPanel.appendChild(UI.directoryContainer);
 
-    // 目录折叠/展开事件
-    UI.directoryToggle.addEventListener('click', () => {
-      const isCollapsed = UI.directoryPanel.classList.toggle('collapsed');
-      UI.directoryToggle.textContent = isCollapsed ? '+' : '-';
-    });
-
+    // directoryToggle 收起逻辑已改为纯 CSS :hover，此处移除相关事件
+    
     // 对话目录拖拽功能
     let isDragging = false;
     let currentX = 0;
@@ -1743,10 +1738,6 @@
     let yOffset = 0;
 
     directoryHeader.addEventListener('mousedown', (e) => {
-      // 点击折叠按钮时不触发拖拽
-      if (e.target === UI.directoryToggle || e.target.closest('.aihub-directory-toggle')) {
-        return;
-      }
       isDragging = true;
       UI.directoryPanel.classList.add('dragging');
       initialX = e.clientX - xOffset;
