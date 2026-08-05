@@ -133,6 +133,51 @@ body.aihub-open.aihub-gemini .aihub-toggle {
   left: calc(100vw - 424px);
 }
 
+/* ---- Gemini 深色模式文字对比度兜底 ----
+   Gemini 自身深色背景与系统 prefers-color-scheme 可能不同步，
+   这里强制保证目录面板/主面板文字为高对比浅色，避免出现深灰不可读。 */
+@media (prefers-color-scheme: dark) {
+  body.aihub-gemini .aihub-directory-panel,
+  body.aihub-gemini .aihub-directory-item,
+  body.aihub-gemini .aihub-directory-empty,
+  body.aihub-gemini .aihub-directory-header {
+    color: #f1f5f9;
+  }
+  body.aihub-gemini .aihub-directory-item {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  body.aihub-gemini .aihub-directory-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  body.aihub-gemini .aihub-directory-icon {
+    color: #93c5fd;
+  }
+}
+
+/* 进一步兜底：当页面背景偏暗时（无论 prefers-color-scheme），
+   通过 JS 标记 .aihub-page-dark 强制浅色文字。
+   detectPageThemeMode 检测到 dark 时会添加该类到 <html>。
+   覆盖所有平台，避免 Gemini/ChatGPT/Grok 自有深色主题与系统不同步。 */
+html.aihub-page-dark .aihub-directory-panel,
+html.aihub-page-dark .aihub-directory-item,
+html.aihub-page-dark .aihub-directory-empty,
+html.aihub-page-dark .aihub-directory-header {
+  color: #f1f5f9;
+}
+html.aihub-page-dark .aihub-directory-panel {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+html.aihub-page-dark .aihub-directory-item {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+html.aihub-page-dark .aihub-directory-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+html.aihub-page-dark .aihub-directory-icon {
+  color: #93c5fd;
+}
+
 /* ---- 头部 ---- */
 .aihub-header {
   display: flex;
@@ -218,35 +263,88 @@ body.aihub-open.aihub-gemini .aihub-toggle {
   position: fixed;
   top: 88px;
   right: 44px;
-  width: 320px; /* 稍微加宽一点以显得更修长 */
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(220, 230, 255, 0.4) 100%);
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(220, 230, 255, 0.6) 100%);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
   color: var(--aihub-panel-text);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 16px;
-  box-shadow: 0 12px 48px 0 rgba(31, 38, 135, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px 0 rgba(31, 38, 135, 0.2);
   z-index: 10000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: var(--aihub-font);
-  transition: right 0.25s ease, box-shadow 0.3s ease;
-  
-  /* 强行悬停展开功能 */
-  max-height: 48px; /* 默认收起态高度 */
+  transition:
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.25s ease,
+    right 0.25s ease,
+    box-shadow 0.3s ease;
 }
 
 @media (prefers-color-scheme: dark) {
   .aihub-directory-panel {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.4) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.88) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f1f5f9;
   }
 }
 
 .aihub-directory-panel:hover {
-  max-height: 400px;
+  width: 320px;
+  height: auto;
+  max-height: 420px;
+  border-radius: 16px;
   box-shadow: 0 16px 64px 0 rgba(31, 38, 135, 0.3);
+}
+
+/* ---- 收起态图标 + 数量徽标 ---- */
+.aihub-directory-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--aihub-primary);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+.aihub-directory-panel:hover .aihub-directory-icon {
+  display: none;
+}
+
+.aihub-directory-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aihub-directory-panel:hover .aihub-directory-badge {
+  display: none;
 }
 
 body.aihub-open .aihub-directory-panel {
@@ -254,16 +352,13 @@ body.aihub-open .aihub-directory-panel {
 }
 
 .aihub-directory {
-  max-height: 352px;
+  max-height: 376px;
   overflow-y: auto;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  display: none;
 }
 
 .aihub-directory-panel:hover .aihub-directory {
-  opacity: 1;
-  visibility: visible;
+  display: block;
 }
 
 .aihub-directory-item {
@@ -273,6 +368,9 @@ body.aihub-open .aihub-directory-panel {
   border-bottom: 1px solid var(--aihub-border);
   cursor: pointer;
   transition: background-color var(--aihub-transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .aihub-directory-item:hover {
@@ -518,13 +616,13 @@ body.aihub-open .aihub-directory-panel {
 
 /* ---- 目录折叠按钮/头部 ---- */
 .aihub-directory-header {
+  display: none;
   padding: 14px 20px;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--aihub-text-muted);
-  display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: move;
@@ -534,9 +632,16 @@ body.aihub-open .aihub-directory-panel {
   transition: border-bottom 0.3s ease;
 }
 
-/* 当展开时，给予头部一点分割线 */
+/* 当展开时，显示头部并给予一点分割线 */
 .aihub-directory-panel:hover .aihub-directory-header {
+  display: flex;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .aihub-directory-panel:hover .aihub-directory-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
 }
 
 .aihub-directory-panel.dragging {
@@ -549,13 +654,8 @@ body.aihub-open .aihub-directory-panel {
   display: none; /* 悬停交互后不再需要这个减号按钮 */
 }
 
-.aihub-directory-panel.collapsed .aihub-directory {
-  display: none;
-}
-
-.aihub-directory-panel.collapsed {
-  max-height: 48px;
-}
+/* 收起态样式现已由 .aihub-directory-panel 默认状态承载，
+   .collapsed 类不再使用，保留空规则以避免引用错误。 */
 
 /* ---- 底部版权信息 ---- */
 .aihub-footer {

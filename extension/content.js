@@ -61,6 +61,8 @@
     stopButton: null,
     directoryContainer: null,
     directoryToggle: null,
+    directoryIcon: null,
+    directoryBadge: null,
     progressBar: null,
     progressFill: null,
     toastContainer: null
@@ -756,6 +758,9 @@
     Object.entries(vars).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
     });
+    // 同步标记 <html> 的明暗，供 CSS 兜底使用（不依赖 prefers-color-scheme）
+    document.documentElement.classList.toggle('aihub-page-dark', mode === 'dark');
+    document.documentElement.classList.toggle('aihub-page-light', mode === 'light');
     currentThemeMode = mode;
   }
 
@@ -1054,14 +1059,48 @@
     }
   }
 
+  // 从 user-query 元素提取纯净文本（去除 Gemini 渲染的时间戳与"你说"标签）
+  function extractGeminiUserText(el) {
+    if (!el) return '';
+    // 优先使用内部文本容器（不含时间戳/你说前缀）
+    const inner = el.querySelector('.query-text-line, .query-text p, .query-text');
+    let raw = (inner ? inner.textContent : el.textContent || '').trim().replace(/\s+/g, ' ');
+    // 防御性清洗：去除"你说"前缀与完整日期时间戳（如 2026-08-05 14:18:16）
+    raw = raw.replace(/^\d{4}-\d{1,2}-\d{1,2}[\s T]\d{1,2}:\d{2}(?::\d{2})?\s*/u, '');
+    raw = raw.replace(/^你说[:：]?\s*/u, '');
+    return raw.trim();
+  }
+
+  // 提取 HH:MM 简化时间；无法解析时返回 null
+  function extractGeminiUserTime(el) {
+    if (!el) return null;
+    const timeEl = el.querySelector('time');
+    const source = timeEl?.textContent || el.textContent || '';
+    // 优先匹配完整时间戳中的 时:分
+    const full = source.match(/(\d{1,2}):(\d{2})(?::\d{2})?/);
+    if (full) return `${full[1].padStart(2, '0')}:${full[2]}`;
+    return null;
+  }
+
   function buildDirectoryItems(turns) {
     const items = [];
+    const isGemini = currentAdapter?.id === 'gemini';
     turns.forEach((turn) => {
       if (turn.role !== 'user') return;
-      const text = (turn.element?.textContent || '').trim().replace(/\s+/g, ' ');
+      const el = turn.element;
+      let text;
+      let time = null;
+      if (isGemini && el) {
+        text = extractGeminiUserText(el);
+        time = extractGeminiUserTime(el);
+      } else {
+        text = (el?.textContent || '').trim().replace(/\s+/g, ' ');
+        // 非 Gemini 也做一次防御性清洗
+        text = text.replace(/^你说[:：]?\s*/u, '').trim();
+      }
       if (!text) return;
-      const anchorId = ensureAnchorId(turn.element);
-      items.push({ anchorId, text });
+      const anchorId = ensureAnchorId(el);
+      items.push({ anchorId, text, time });
     });
     return items;
   }
@@ -1079,17 +1118,27 @@
         text: '未检测到用户提问'
       });
       UI.directoryContainer.appendChild(empty);
+      if (UI.directoryBadge) UI.directoryBadge.style.display = 'none';
       return;
     }
 
-    items.forEach((item, idx) => {
+    items.forEach((item) => {
+      const preview = item.text.replace(/\s+/g, ' ').trim();
+      const shortText = preview.length > 40 ? `${preview.slice(0, 40)}...` : preview;
       const row = CommonUtil.createElement('div', {
         className: 'aihub-directory-item',
-        text: `${idx + 1}. ${item.text.length > 60 ? `${item.text.slice(0, 60)}...` : item.text}`
+        text: item.time ? `${item.time}  ${shortText}` : shortText
       });
       row.dataset.anchorId = item.anchorId;
       UI.directoryContainer.appendChild(row);
     });
+
+    // 更新胶囊徽标数量
+    if (UI.directoryBadge) {
+      const count = items.length;
+      UI.directoryBadge.textContent = String(count);
+      UI.directoryBadge.style.display = count > 0 ? 'flex' : 'none';
+    }
   }
 
   function updateDirectory() {
@@ -1726,6 +1775,12 @@
 
     // 对话目录独立为右侧浮层，放在侧边栏外部
     UI.directoryPanel = CommonUtil.createElement('div', { className: 'aihub-directory-panel' });
+    // 收起态显示的图标 + 数量徽标
+    UI.directoryIcon = CommonUtil.createElement('span', { className: 'aihub-directory-icon', text: '☰' });
+    UI.directoryBadge = CommonUtil.createElement('span', { className: 'aihub-directory-badge' });
+    UI.directoryBadge.style.display = 'none';
+    UI.directoryPanel.appendChild(UI.directoryIcon);
+    UI.directoryPanel.appendChild(UI.directoryBadge);
     const directoryHeader = CommonUtil.createElement('div', { className: 'aihub-directory-header' });
     const directoryTitle = CommonUtil.createElement('span', { text: 'Directory' });
     // 不再需要展开折叠按钮，只显示文字，依靠 hover 处理展现
@@ -1751,6 +1806,16 @@
       initialX = e.clientX - xOffset;
       initialY = e.clientY - yOffset;
     });
+    // 收起态下，胶囊图标也可作为拖拽手柄
+    if (UI.directoryIcon) {
+      UI.directoryIcon.addEventListener('mousedown', (e) => {
+        // 鼠标移入会触发展开；这里允许收起态下抓取图标拖动
+        isDragging = true;
+        UI.directoryPanel.classList.add('dragging');
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
+      });
+    }
 
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
