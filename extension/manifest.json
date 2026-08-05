@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AIhubEnhenced  AI对话聚合增加导出助手",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "导出 Gemini、ChatGPT、Grok 的对话内容并提供对话目录",
   "icons": {
     "16": "icons/1024x1024.png",
