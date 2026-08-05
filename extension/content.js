@@ -147,8 +147,8 @@
       return `${yyyy}-${mm}-${dd}`;
     },
 
-    // 截取对话名称为 1-10 字符
-    truncateTitle(title, maxLen = 10) {
+    // 截取对话名称为 1-30 字符
+    truncateTitle(title, maxLen = 30) {
       const cleaned = (title || 'untitled')
         .replace(/[\\/\-:*?"<>|]+/g, '_')
         .replace(/\s+/g, '_')
@@ -158,7 +158,7 @@
     },
 
     // 生成标准化导出文件名
-    // 格式：{平台}-{对话名称1-10字}-{北京时间YYYY-MM-dd}.{后缀}
+    // 格式：{平台}-{对话名称1-30字}-{北京时间YYYY-MM-dd}.{后缀}
     build(platform, title, ext) {
       const platformName = {
         'gemini': 'Gemini',
@@ -829,9 +829,17 @@
       match: (url) => url.includes('gemini.google.com'),
       messageSelectors: 'user-query, model-response',
       getTitle: () => {
-        return document.querySelector('conversations-list div.selected')?.textContent
-          || document.querySelector('div.conversation-title')?.textContent
-          || document.title;
+        const raw = (document.title || '').trim();
+        // 清理平台后缀：兼容 - / – / — / | 分隔符
+        const cleaned = raw
+          .replace(/\s*[-–—|]\s*(Google\s*)?Gemini\s*$/i, '')
+          .trim();
+        // 默认标题集合（平台无会话标题时的 document.title）
+        const defaults = ['gemini', 'google gemini', 'new chat'];
+        if (!cleaned || defaults.includes(cleaned.toLowerCase())) {
+          return 'untitled';
+        }
+        return cleaned;
       },
       getTurns: () => {
         const userQueries = document.querySelectorAll('user-query');
